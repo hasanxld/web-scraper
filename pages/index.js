@@ -35,26 +35,28 @@ export default function Home() {
     setResult('')
 
     try {
-      // Use special auto-generated API key for tool
+      // Use special auto-generated API key for tool - FIXED
       const response = await fetch('/api/hasan/scrape', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': 'sk_tool_auto_generate_hasan_system'
+          'x-api-key': 'sk_tool_auto_generate_hasan_system_2024' // FIXED KEY
         },
         body: JSON.stringify({ url })
       })
 
       const data = await response.json()
+      console.log('API Response:', data)
 
-      if (response.ok) {
+      if (response.ok && data.status === 'success') {
         setResult(data.html || data.content)
         showToast('Successfully scraped website!')
       } else {
         showToast(data.error || 'Failed to scrape website', 'error')
       }
     } catch (error) {
-      showToast('An error occurred while scraping', 'error')
+      console.error('Scraping error:', error)
+      showToast('Network error occurred while scraping', 'error')
     } finally {
       setLoading(false)
     }
@@ -83,20 +85,23 @@ export default function Home() {
     setResult('')
   }
 
-  // Syntax highlighting function
+  // Enhanced syntax highlighting function - FIXED
   const highlightCode = (html) => {
+    if (!html) return ''
+    
     return html
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/"(.*?)"/g, '<span class="text-green-400">"$1"</span>')
-      .replace(/&lt;!DOCTYPE(.*?)&gt;/g, '<span class="text-purple-500">&lt;!DOCTYPE$1&gt;</span>')
+      .replace(/"(.*?)"/g, '<span class="text-yellow-300">"$1"</span>')
+      .replace(/&lt;!DOCTYPE(.*?)&gt;/g, '<span class="text-purple-400">&lt;!DOCTYPE$1&gt;</span>')
       .replace(/&lt;(\/?)(html|head|body|div|span|p|a|img|script|style|link|meta|title|h1|h2|h3|h4|h5|h6|ul|ol|li|table|tr|td|th|form|input|button|select|option|br|hr|nav|header|footer|section|article|aside|main)(.*?)&gt;/g, '<span class="text-blue-400">&lt;$1$2$3&gt;</span>')
       .replace(/&lt;(\/?)([a-zA-Z][a-zA-Z0-9]*)(.*?)&gt;/g, '<span class="text-blue-300">&lt;$1$2$3&gt;</span>')
-      .replace(/class=(".*?")/g, 'class=<span class="text-yellow-300">$1</span>')
-      .replace(/id=(".*?")/g, 'id=<span class="text-yellow-300">$1</span>')
-      .replace(/href=(".*?")/g, 'href=<span class="text-yellow-300">$1</span>')
-      .replace(/src=(".*?")/g, 'src=<span class="text-yellow-300">$1</span>')
+      .replace(/class=(".*?")/g, 'class=<span class="text-green-400">$1</span>')
+      .replace(/id=(".*?")/g, 'id=<span class="text-green-400">$1</span>')
+      .replace(/href=(".*?")/g, 'href=<span class="text-green-400">$1</span>')
+      .replace(/src=(".*?")/g, 'src=<span class="text-green-400">$1</span>')
+      .replace(/&lt;!--(.*?)--&gt;/g, '<span class="text-gray-500">&lt;!--$1--&gt;</span>')
   }
 
   return (
@@ -133,7 +138,7 @@ export default function Home() {
                   Web Scraping Tool
                 </h2>
                 <p className="text-gray-600">
-                  Enter any website URL to extract HTML content instantly
+                  Enter any website URL to extract HTML content instantly - No API Key Required!
                 </p>
               </div>
 
@@ -143,13 +148,14 @@ export default function Home() {
                     type="url"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
-                    placeholder="https://example.com"
+                    placeholder="https://example.com or example.com"
                     className="flex-1 px-4 py-3 border border-gray-300 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
+                    required
                   />
                   <button
                     type="submit"
                     disabled={loading}
-                    className="bg-primary-500 text-white px-8 py-3 hover:bg-primary-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
+                    className="bg-primary-500 text-white px-8 py-3 hover:bg-primary-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px] transition-colors"
                   >
                     {loading ? (
                       <span className="flex items-center justify-center">
@@ -157,44 +163,53 @@ export default function Home() {
                         Scraping...
                       </span>
                     ) : (
-                      'Scrape Website'
+                      <span className="flex items-center justify-center">
+                        <i className="ri-download-line mr-2"></i>
+                        Scrape Website
+                      </span>
                     )}
                   </button>
                 </div>
+                <p className="text-sm text-gray-500 text-center">
+                  Try: example.com, google.com, or any website URL
+                </p>
               </form>
 
               {result && (
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
                   <div className="bg-gray-900 px-4 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <h3 className="text-white font-medium">Scraped Content</h3>
-                    <div className="flex space-x-2">
+                    <div>
+                      <h3 className="text-white font-medium">Scraped Content</h3>
+                      <p className="text-gray-400 text-sm">Length: {result.length} characters</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
                       <button
                         onClick={handleCopy}
-                        className="flex items-center space-x-2 px-3 py-1 bg-gray-700 text-white hover:bg-gray-600 text-sm"
+                        className="flex items-center space-x-2 px-3 py-2 bg-gray-700 text-white hover:bg-gray-600 text-sm transition-colors"
                       >
                         <i className="ri-clipboard-line"></i>
                         <span>Copy</span>
                       </button>
                       <button
                         onClick={handleDownload}
-                        className="flex items-center space-x-2 px-3 py-1 bg-primary-500 text-white hover:bg-primary-600 text-sm"
+                        className="flex items-center space-x-2 px-3 py-2 bg-primary-500 text-white hover:bg-primary-600 text-sm transition-colors"
                       >
                         <i className="ri-download-line"></i>
                         <span>Download</span>
                       </button>
                       <button
                         onClick={handleReset}
-                        className="flex items-center space-x-2 px-3 py-1 bg-gray-600 text-white hover:bg-gray-500 text-sm"
+                        className="flex items-center space-x-2 px-3 py-2 bg-gray-600 text-white hover:bg-gray-500 text-sm transition-colors"
                       >
                         <i className="ri-refresh-line"></i>
                         <span>Reset</span>
                       </button>
                     </div>
                   </div>
-                  <div className="bg-gray-800 p-4 overflow-auto max-h-96">
+                  <div className="bg-gray-900 p-4 overflow-auto max-h-96">
                     <pre className="text-sm">
                       <code 
-                        className="language-html"
+                        className="language-html block"
                         dangerouslySetInnerHTML={{ 
                           __html: highlightCode(result) 
                         }}
@@ -217,7 +232,7 @@ export default function Home() {
             
             <div className="grid md:grid-cols-3 gap-8">
               {features.map((feature, index) => (
-                <div key={index} className="text-center p-6 border border-gray-200 hover:border-primary-500 transition-colors rounded-lg">
+                <div key={index} className="text-center p-6 border border-gray-200 hover:border-primary-500 transition-colors rounded-lg hover:shadow-lg">
                   <div className="w-16 h-16 bg-primary-500 mx-auto mb-4 flex items-center justify-center rounded-lg">
                     <i className={`${feature.icon} text-white text-2xl`}></i>
                   </div>
@@ -237,10 +252,10 @@ export default function Home() {
               Generate your API key for unlimited requests and advanced features.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="/generate" className="bg-white text-primary-500 px-6 py-3 hover:bg-gray-100 font-medium rounded-lg">
+              <a href="/generate" className="bg-white text-primary-500 px-6 py-3 hover:bg-gray-100 font-medium rounded-lg transition-colors">
                 Generate API Key
               </a>
-              <a href="/docs" className="border-2 border-white text-white px-6 py-3 hover:bg-white hover:text-primary-500 font-medium rounded-lg">
+              <a href="/docs" className="border-2 border-white text-white px-6 py-3 hover:bg-white hover:text-primary-500 font-medium rounded-lg transition-colors">
                 View Documentation
               </a>
             </div>
