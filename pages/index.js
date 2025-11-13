@@ -9,14 +9,13 @@ export default function Home() {
   const [result, setResult] = useState('')
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState(null)
-
-  // Auto-detect website URL
   const [websiteUrl, setWebsiteUrl] = useState('')
 
   useEffect(() => {
-    // Auto-detect current website URL
-    const currentUrl = window.location.origin
-    setWebsiteUrl(currentUrl)
+    // Safe URL detection
+    if (typeof window !== 'undefined') {
+      setWebsiteUrl(window.location.origin)
+    }
   }, [])
 
   const showToast = (message, type = 'success') => {
@@ -35,9 +34,6 @@ export default function Home() {
     setResult('')
 
     try {
-      console.log('Starting scrape for:', url)
-      
-      // Use special auto-generated API key for tool
       const response = await fetch('/api/hasan/scrape', {
         method: 'POST',
         headers: {
@@ -48,18 +44,16 @@ export default function Home() {
       })
 
       const data = await response.json()
-      console.log('API Response:', data)
 
       if (response.ok && data.status === 'success') {
         setResult(data.html || data.content)
         showToast('Successfully scraped website!')
       } else {
-        const errorMsg = data.error || data.details || 'Failed to scrape website'
-        console.error('API Error:', errorMsg)
-        showToast(`${errorMsg}`, 'error')
+        const errorMsg = data.error || 'Failed to scrape website'
+        showToast(errorMsg, 'error')
       }
     } catch (error) {
-      console.error('Network error:', error)
+      console.error('Error:', error)
       showToast('Network error occurred while scraping', 'error')
     } finally {
       setLoading(false)
@@ -89,32 +83,54 @@ export default function Home() {
     setResult('')
   }
 
-  // Enhanced syntax highlighting function with proper line breaks
+  // Safe syntax highlighting function
   const highlightCode = (html) => {
-    if (!html) return ''
+    if (!html || typeof html !== 'string') return ''
     
-    // Add line breaks for proper formatting
-    let formattedHtml = html
-      .replace(/</g, '\n<')
-      .replace(/>/g, '>\n')
-      .replace(/\n\n/g, '\n')
-      .trim()
+    try {
+      let formattedHtml = html
+        .replace(/</g, '\n<')
+        .replace(/>/g, '>\n')
+        .replace(/\n\n/g, '\n')
+        .trim()
 
-    return formattedHtml
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"(.*?)"/g, '<span class="text-yellow-300">"$1"</span>')
-      .replace(/&lt;!DOCTYPE(.*?)&gt;/g, '<span class="text-purple-400">&lt;!DOCTYPE$1&gt;</span>')
-      .replace(/&lt;(\/?)(html|head|body|div|span|p|a|img|script|style|link|meta|title|h1|h2|h3|h4|h5|h6|ul|ol|li|table|tr|td|th|form|input|button|select|option|br|hr|nav|header|footer|section|article|aside|main)(.*?)&gt;/g, '<span class="text-blue-400">&lt;$1$2$3&gt;</span>')
-      .replace(/&lt;(\/?)([a-zA-Z][a-zA-Z0-9]*)(.*?)&gt;/g, '<span class="text-blue-300">&lt;$1$2$3&gt;</span>')
-      .replace(/class=(".*?")/g, 'class=<span class="text-green-400">$1</span>')
-      .replace(/id=(".*?")/g, 'id=<span class="text-green-400">$1</span>')
-      .replace(/href=(".*?")/g, 'href=<span class="text-green-400">$1</span>')
-      .replace(/src=(".*?")/g, 'src=<span class="text-green-400">$1</span>')
-      .replace(/&lt;!--(.*?)--&gt;/g, '<span class="text-gray-500">&lt;!--$1--&gt;</span>')
-      .replace(/\n/g, '<br/>')
+      return formattedHtml
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"(.*?)"/g, '<span style="color: #fbbf24;">"$1"</span>')
+        .replace(/&lt;!DOCTYPE(.*?)&gt;/g, '<span style="color: #c084fc;">&lt;!DOCTYPE$1&gt;</span>')
+        .replace(/&lt;(\/?)(html|head|body|div|span|p|a|img|script|style|link|meta|title|h1|h2|h3|h4|h5|h6|ul|ol|li|table|tr|td|th|form|input|button|select|option|br|hr|nav|header|footer|section|article|aside|main)(.*?)&gt;/g, '<span style="color: #60a5fa;">&lt;$1$2$3&gt;</span>')
+        .replace(/&lt;(\/?)([a-zA-Z][a-zA-Z0-9]*)(.*?)&gt;/g, '<span style="color: #93c5fd;">&lt;$1$2$3&gt;</span>')
+        .replace(/class=(".*?")/g, 'class=<span style="color: #34d399;">$1</span>')
+        .replace(/id=(".*?")/g, 'id=<span style="color: #34d399;">$1</span>')
+        .replace(/href=(".*?")/g, 'href=<span style="color: #34d399;">$1</span>')
+        .replace(/src=(".*?")/g, 'src=<span style="color: #34d399;">$1</span>')
+        .replace(/&lt;!--(.*?)--&gt;/g, '<span style="color: #9ca3af;">&lt;!--$1--&gt;</span>')
+        .replace(/\n/g, '<br/>')
+    } catch (error) {
+      console.error('Highlight error:', error)
+      return html
+    }
   }
+
+  const features = [
+    {
+      icon: 'ri-zap-line',
+      title: 'Lightning Fast',
+      description: 'Get results in seconds with our optimized scraping engine and advanced caching system.'
+    },
+    {
+      icon: 'ri-shield-keyhole-line',
+      title: 'No API Key Required',
+      description: 'Use our tool instantly without any registration or API key. Fast and hassle-free.'
+    },
+    {
+      icon: 'ri-global-line',
+      title: 'No CORS Issues',
+      description: 'Built with CORS support for seamless integration with any web application or website.'
+    }
+  ]
 
   return (
     <>
@@ -167,25 +183,19 @@ export default function Home() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="bg-primary-500 text-white px-8 py-3 hover:bg-primary-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px] transition-colors relative overflow-hidden group"
+                    className="bg-primary-500 text-white px-8 py-3 hover:bg-primary-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px] transition-colors"
                   >
                     {loading ? (
                       <span className="flex items-center justify-center">
-                        <div className="relative">
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                          <div className="absolute inset-0 border-2 border-white border-r-transparent border-b-transparent rounded-full animate-ping"></div>
-                        </div>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                         Scraping...
                       </span>
                     ) : (
-                      <span className="flex items-center justify-center group-hover:scale-105 transition-transform">
+                      <span className="flex items-center justify-center">
                         <i className="ri-download-line mr-2"></i>
                         Scrape Website
                       </span>
                     )}
-                    
-                    {/* Button Shimmer Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                   </button>
                 </div>
                 <p className="text-sm text-gray-500 text-center">
@@ -225,9 +235,9 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="bg-gray-900 p-4 overflow-auto max-h-96">
-                    <pre className="text-sm font-mono text-green-400 whitespace-pre-wrap break-words">
+                    <pre className="text-sm font-mono whitespace-pre-wrap break-words">
                       <code 
-                        className="language-html block"
+                        className="block text-green-400"
                         dangerouslySetInnerHTML={{ 
                           __html: highlightCode(result) 
                         }}
@@ -250,8 +260,8 @@ export default function Home() {
             
             <div className="grid md:grid-cols-3 gap-8">
               {features.map((feature, index) => (
-                <div key={index} className="text-center p-6 border border-gray-200 hover:border-primary-500 transition-colors rounded-lg hover:shadow-lg group">
-                  <div className="w-16 h-16 bg-primary-500 mx-auto mb-4 flex items-center justify-center rounded-lg group-hover:scale-110 transition-transform duration-300">
+                <div key={index} className="text-center p-6 border border-gray-200 hover:border-primary-500 transition-colors rounded-lg hover:shadow-lg">
+                  <div className="w-16 h-16 bg-primary-500 mx-auto mb-4 flex items-center justify-center rounded-lg">
                     <i className={`${feature.icon} text-white text-2xl`}></i>
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">{feature.title}</h3>
@@ -270,10 +280,10 @@ export default function Home() {
               Generate your API key for unlimited requests and advanced features.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="/generate" className="bg-white text-primary-500 px-6 py-3 hover:bg-gray-100 font-medium rounded-lg transition-colors hover:scale-105 transform">
+              <a href="/generate" className="bg-white text-primary-500 px-6 py-3 hover:bg-gray-100 font-medium rounded-lg transition-colors">
                 Generate API Key
               </a>
-              <a href="/docs" className="border-2 border-white text-white px-6 py-3 hover:bg-white hover:text-primary-500 font-medium rounded-lg transition-colors hover:scale-105 transform">
+              <a href="/docs" className="border-2 border-white text-white px-6 py-3 hover:bg-white hover:text-primary-500 font-medium rounded-lg transition-colors">
                 View Documentation
               </a>
             </div>
@@ -293,21 +303,3 @@ export default function Home() {
     </>
   )
 }
-
-const features = [
-  {
-    icon: 'ri-zap-line',
-    title: 'Lightning Fast',
-    description: 'Get results in seconds with our optimized scraping engine and advanced caching system.'
-  },
-  {
-    icon: 'ri-shield-keyhole-line',
-    title: 'No API Key Required',
-    description: 'Use our tool instantly without any registration or API key. Fast and hassle-free.'
-  },
-  {
-    icon: 'ri-global-line',
-    title: 'No CORS Issues',
-    description: 'Built with CORS support for seamless integration with any web application or website.'
-  }
-]
