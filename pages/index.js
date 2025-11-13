@@ -35,28 +35,32 @@ export default function Home() {
     setResult('')
 
     try {
+      console.log('🔄 Starting scrape for:', url)
+      
       // Use special auto-generated API key for tool - FIXED
       const response = await fetch('/api/hasan/scrape', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': 'sk_tool_auto_generate_hasan_system_2024' // FIXED KEY
+          'x-api-key': 'sk_tool_auto_generate_hasan_system_2024'
         },
         body: JSON.stringify({ url })
       })
 
       const data = await response.json()
-      console.log('API Response:', data)
+      console.log('📦 API Response:', data)
 
       if (response.ok && data.status === 'success') {
         setResult(data.html || data.content)
-        showToast('Successfully scraped website!')
+        showToast('✅ Successfully scraped website!')
       } else {
-        showToast(data.error || 'Failed to scrape website', 'error')
+        const errorMsg = data.error || data.details || 'Failed to scrape website'
+        console.error('❌ API Error:', errorMsg)
+        showToast(`❌ ${errorMsg}`, 'error')
       }
     } catch (error) {
-      console.error('Scraping error:', error)
-      showToast('Network error occurred while scraping', 'error')
+      console.error('💥 Network error:', error)
+      showToast('🔌 Network error occurred while scraping', 'error')
     } finally {
       setLoading(false)
     }
@@ -64,7 +68,7 @@ export default function Home() {
 
   const handleCopy = () => {
     navigator.clipboard.writeText(result)
-    showToast('Copied to clipboard!')
+    showToast('📋 Copied to clipboard!')
   }
 
   const handleDownload = () => {
@@ -77,7 +81,7 @@ export default function Home() {
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-    showToast('Download started!')
+    showToast('💾 Download started!')
   }
 
   const handleReset = () => {
@@ -85,7 +89,7 @@ export default function Home() {
     setResult('')
   }
 
-  // Enhanced syntax highlighting function - FIXED
+  // Enhanced syntax highlighting function
   const highlightCode = (html) => {
     if (!html) return ''
     
@@ -155,19 +159,26 @@ export default function Home() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="bg-primary-500 text-white px-8 py-3 hover:bg-primary-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px] transition-colors"
+                    className="bg-primary-500 text-white px-8 py-3 hover:bg-primary-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px] transition-colors relative overflow-hidden group"
                   >
                     {loading ? (
                       <span className="flex items-center justify-center">
-                        <i className="ri-loader-4-line animate-spin mr-2"></i>
+                        {/* Scraping Loader */}
+                        <div className="relative">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                          <div className="absolute inset-0 border-2 border-white border-r-transparent border-b-transparent rounded-full animate-ping"></div>
+                        </div>
                         Scraping...
                       </span>
                     ) : (
-                      <span className="flex items-center justify-center">
+                      <span className="flex items-center justify-center group-hover:scale-105 transition-transform">
                         <i className="ri-download-line mr-2"></i>
                         Scrape Website
                       </span>
                     )}
+                    
+                    {/* Button Shimmer Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                   </button>
                 </div>
                 <p className="text-sm text-gray-500 text-center">
@@ -179,27 +190,27 @@ export default function Home() {
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
                   <div className="bg-gray-900 px-4 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
-                      <h3 className="text-white font-medium">Scraped Content</h3>
+                      <h3 className="text-white font-medium">✅ Scraped Content</h3>
                       <p className="text-gray-400 text-sm">Length: {result.length} characters</p>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <button
                         onClick={handleCopy}
-                        className="flex items-center space-x-2 px-3 py-2 bg-gray-700 text-white hover:bg-gray-600 text-sm transition-colors"
+                        className="flex items-center space-x-2 px-3 py-2 bg-gray-700 text-white hover:bg-gray-600 text-sm transition-colors rounded"
                       >
                         <i className="ri-clipboard-line"></i>
                         <span>Copy</span>
                       </button>
                       <button
                         onClick={handleDownload}
-                        className="flex items-center space-x-2 px-3 py-2 bg-primary-500 text-white hover:bg-primary-600 text-sm transition-colors"
+                        className="flex items-center space-x-2 px-3 py-2 bg-primary-500 text-white hover:bg-primary-600 text-sm transition-colors rounded"
                       >
                         <i className="ri-download-line"></i>
                         <span>Download</span>
                       </button>
                       <button
                         onClick={handleReset}
-                        className="flex items-center space-x-2 px-3 py-2 bg-gray-600 text-white hover:bg-gray-500 text-sm transition-colors"
+                        className="flex items-center space-x-2 px-3 py-2 bg-gray-600 text-white hover:bg-gray-500 text-sm transition-colors rounded"
                       >
                         <i className="ri-refresh-line"></i>
                         <span>Reset</span>
@@ -232,8 +243,8 @@ export default function Home() {
             
             <div className="grid md:grid-cols-3 gap-8">
               {features.map((feature, index) => (
-                <div key={index} className="text-center p-6 border border-gray-200 hover:border-primary-500 transition-colors rounded-lg hover:shadow-lg">
-                  <div className="w-16 h-16 bg-primary-500 mx-auto mb-4 flex items-center justify-center rounded-lg">
+                <div key={index} className="text-center p-6 border border-gray-200 hover:border-primary-500 transition-colors rounded-lg hover:shadow-lg group">
+                  <div className="w-16 h-16 bg-primary-500 mx-auto mb-4 flex items-center justify-center rounded-lg group-hover:scale-110 transition-transform duration-300">
                     <i className={`${feature.icon} text-white text-2xl`}></i>
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">{feature.title}</h3>
@@ -252,10 +263,10 @@ export default function Home() {
               Generate your API key for unlimited requests and advanced features.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="/generate" className="bg-white text-primary-500 px-6 py-3 hover:bg-gray-100 font-medium rounded-lg transition-colors">
+              <a href="/generate" className="bg-white text-primary-500 px-6 py-3 hover:bg-gray-100 font-medium rounded-lg transition-colors hover:scale-105 transform">
                 Generate API Key
               </a>
-              <a href="/docs" className="border-2 border-white text-white px-6 py-3 hover:bg-white hover:text-primary-500 font-medium rounded-lg transition-colors">
+              <a href="/docs" className="border-2 border-white text-white px-6 py-3 hover:bg-white hover:text-primary-500 font-medium rounded-lg transition-colors hover:scale-105 transform">
                 View Documentation
               </a>
             </div>
