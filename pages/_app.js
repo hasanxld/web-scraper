@@ -1,10 +1,10 @@
 import '../styles/globals.css'
-import LoadingBar from '../components/LoadingBar'
+import PremiumLoader from '../components/PremiumLoader'
 
 export default function App({ Component, pageProps }) {
   return (
     <>
-      <LoadingBar />
+      <PremiumLoader />
       <Component {...pageProps} />
     </>
   )
