@@ -21,8 +21,11 @@ export default async function handler(req, res) {
   const apiKey = req.headers['x-api-key']
   const { url } = req.body
 
-  // Validate API key
-  if (!apiKey || !validateApiKey(apiKey)) {
+  // Special auto-generated key for tool (no validation required)
+  const isToolRequest = apiKey === 'sk_tool_auto_generate_hasan_system'
+
+  // Validate API key for non-tool requests
+  if (!isToolRequest && (!apiKey || !validateApiKey(apiKey))) {
     return res.status(401).json({
       status: 'error',
       error: 'Invalid API key'
@@ -46,50 +49,57 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Check if API key exists and is active
-    const { data: apiKeyData, error: apiKeyError } = await supabase
-      .from('api_keys')
-      .select('*')
-      .eq('key', apiKey)
-      .eq('is_active', true)
-      .single()
+    let apiKeyData = null
 
-    if (apiKeyError || !apiKeyData) {
-      return res.status(401).json({
-        status: 'error',
-        error: 'Invalid or inactive API key'
-      })
+    if (!isToolRequest) {
+      // Check if API key exists and is active for non-tool requests
+      const { data: keyData, error: apiKeyError } = await supabase
+        .from('api_keys')
+        .select('*')
+        .eq('key', apiKey)
+        .eq('is_active', true)
+        .single()
+
+      if (apiKeyError || !keyData) {
+        return res.status(401).json({
+          status: 'error',
+          error: 'Invalid or inactive API key'
+        })
+      }
+
+      apiKeyData = keyData
+
+      // Update API key usage
+      await supabase
+        .from('api_keys')
+        .update({
+          total_requests: keyData.total_requests + 1,
+          last_used: new Date().toISOString()
+        })
+        .eq('id', keyData.id)
+
+      // Log the request
+      const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress
+      await supabase
+        .from('api_requests')
+        .insert([
+          {
+            api_key_id: keyData.id,
+            endpoint: '/api/hasan/scrape',
+            method: 'POST',
+            status_code: 200,
+            ip_address: clientIp,
+            user_agent: req.headers['user-agent']
+          }
+        ])
     }
-
-    // Update API key usage
-    await supabase
-      .from('api_keys')
-      .update({
-        total_requests: apiKeyData.total_requests + 1,
-        last_used: new Date().toISOString()
-      })
-      .eq('id', apiKeyData.id)
-
-    // Log the request
-    const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress
-    await supabase
-      .from('api_requests')
-      .insert([
-        {
-          api_key_id: apiKeyData.id,
-          endpoint: '/api/hasan/scrape',
-          method: 'POST',
-          status_code: 200,
-          ip_address: clientIp,
-          user_agent: req.headers['user-agent']
-        }
-      ])
 
     // Scrape the website
     const scrapeResponse = await fetch(sanitizedUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      }
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      },
+      timeout: 30000
     })
 
     if (!scrapeResponse.ok) {
@@ -98,17 +108,19 @@ export default async function handler(req, res) {
 
     const htmlContent = await scrapeResponse.text()
 
-    // Save scraping result
-    await supabase
-      .from('scraping_results')
-      .insert([
-        {
-          api_key_id: apiKeyData.id,
-          url: sanitizedUrl,
-          html_content: htmlContent,
-          status: 'success'
-        }
-      ])
+    // Save scraping result for non-tool requests
+    if (!isToolRequest && apiKeyData) {
+      await supabase
+        .from('scraping_results')
+        .insert([
+          {
+            api_key_id: apiKeyData.id,
+            url: sanitizedUrl,
+            html_content: htmlContent,
+            status: 'success'
+          }
+        ])
+    }
 
     // Return success response
     res.status(200).json({
@@ -118,27 +130,30 @@ export default async function handler(req, res) {
       tool: 'HASAN',
       html: htmlContent,
       content: htmlContent,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      source: isToolRequest ? 'tool_auto_key' : 'user_api_key'
     })
 
   } catch (error) {
     console.error('Scraping error:', error)
 
-    // Log failed request
-    const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress
-    await supabase
-      .from('api_requests')
-      .insert([
-        {
-          api_key_id: apiKeyData?.id,
-          endpoint: '/api/hasan/scrape',
-          method: 'POST',
-          status_code: 500,
-          ip_address: clientIp,
-          user_agent: req.headers['user-agent'],
-          response_time: null
-        }
-      ])
+    // Log failed request for non-tool requests
+    if (!isToolRequest && apiKeyData) {
+      const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress
+      await supabase
+        .from('api_requests')
+        .insert([
+          {
+            api_key_id: apiKeyData.id,
+            endpoint: '/api/hasan/scrape',
+            method: 'POST',
+            status_code: 500,
+            ip_address: clientIp,
+            user_agent: req.headers['user-agent'],
+            response_time: null
+          }
+        ])
+    }
 
     res.status(500).json({
       status: 'error',
@@ -148,4 +163,4 @@ export default async function handler(req, res) {
       tool: 'HASAN'
     })
   }
-      }
+}
