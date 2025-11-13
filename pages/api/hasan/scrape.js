@@ -6,10 +6,9 @@ const TOOL_API_KEY = 'sk_tool_auto_generate_hasan_system_2024'
 export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-api-key, X-API-Key')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-api-key')
 
-  // Handle preflight request
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
   }
@@ -17,19 +16,20 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({
       status: 'error',
-      error: 'Method not allowed. Use POST.'
+      error: 'Method not allowed'
     })
   }
 
   try {
-    const apiKey = req.headers['x-api-key'] || req.headers['X-API-Key']
+    const apiKey = req.headers['x-api-key']
     const { url } = req.body
 
-    console.log('🔧 API Request Received:', { 
-      hasApiKey: !!apiKey, 
-      url: url,
-      method: req.method 
-    })
+    if (!url) {
+      return res.status(400).json({
+        status: 'error',
+        error: 'URL is required'
+      })
+    }
 
     // Special auto-generated key for tool
     const isToolRequest = apiKey === TOOL_API_KEY
@@ -39,227 +39,101 @@ export default async function handler(req, res) {
       if (!apiKey) {
         return res.status(401).json({
           status: 'error',
-          error: 'API key is required. Use x-api-key header.'
+          error: 'API key is required'
         })
       }
       
       if (!apiKey.startsWith('sk_')) {
         return res.status(401).json({
           status: 'error',
-          error: 'Invalid API key format. Must start with "sk_"'
+          error: 'Invalid API key format'
+        })
+      }
+
+      // Check if API key exists in database
+      const { data: keyData, error: apiKeyError } = await supabase
+        .from('api_keys')
+        .select('*')
+        .eq('key', apiKey)
+        .eq('is_active', true)
+        .single()
+
+      if (apiKeyError || !keyData) {
+        return res.status(401).json({
+          status: 'error',
+          error: 'Invalid or inactive API key'
         })
       }
     }
 
-    // Validate URL
-    if (!url || typeof url !== 'string') {
-      return res.status(400).json({
-        status: 'error',
-        error: 'URL is required in request body and must be a string'
-      })
+    // Validate and sanitize URL
+    let targetUrl = url.trim()
+    if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+      targetUrl = 'https://' + targetUrl
     }
 
-    let sanitizedUrl;
+    // Basic URL validation
     try {
-      // Ensure URL has protocol
-      let urlToScrape = url.trim();
-      if (!urlToScrape.startsWith('http://') && !urlToScrape.startsWith('https://')) {
-        urlToScrape = 'https://' + urlToScrape;
-      }
-      
-      const urlObj = new URL(urlToScrape);
-      sanitizedUrl = urlObj.href;
-      console.log('🔗 Sanitized URL:', sanitizedUrl);
+      new URL(targetUrl)
     } catch (error) {
       return res.status(400).json({
         status: 'error',
-        error: `Invalid URL format: ${url}. Please include http:// or https://`
+        error: 'Invalid URL format'
       })
     }
 
-    let apiKeyData = null;
+    // Scrape the website with proper error handling
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000) // 15 second timeout
 
-    // Validate API key for non-tool requests
-    if (!isToolRequest) {
-      try {
-        const { data: keyData, error: apiKeyError } = await supabase
-          .from('api_keys')
-          .select('*')
-          .eq('key', apiKey)
-          .eq('is_active', true)
-          .single()
-
-        if (apiKeyError || !keyData) {
-          console.log('❌ Invalid API key:', apiKey);
-          return res.status(401).json({
-            status: 'error',
-            error: 'Invalid or inactive API key'
-          })
-        }
-
-        apiKeyData = keyData;
-        console.log('✅ Valid API key:', keyData.name);
-
-        // Update API key usage
-        await supabase
-          .from('api_keys')
-          .update({
-            total_requests: (keyData.total_requests || 0) + 1,
-            last_used: new Date().toISOString()
-          })
-          .eq('id', keyData.id)
-
-      } catch (dbError) {
-        console.error('Database error:', dbError);
-        return res.status(500).json({
-          status: 'error',
-          error: 'Database connection failed'
-        })
-      }
-    }
-
-    console.log('🌐 Starting scrape for:', sanitizedUrl);
-
-    // Scrape the website with enhanced error handling
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-        console.log('⏰ Request timeout');
-      }, 25000); // 25 second timeout
-
-      const fetchOptions = {
+      const response = await fetch(targetUrl, {
         signal: controller.signal,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-          'Upgrade-Insecure-Requests': '1',
-          'Sec-Fetch-Dest': 'document',
-          'Sec-Fetch-Mode': 'navigate',
-          'Sec-Fetch-Site': 'none',
-          'Sec-Fetch-User': '?1'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
         },
-        redirect: 'follow',
-        timeout: 25000
-      };
+        redirect: 'follow'
+      })
 
-      const scrapeResponse = await fetch(sanitizedUrl, fetchOptions);
-      clearTimeout(timeoutId);
+      clearTimeout(timeout)
 
-      console.log('📄 Response Status:', scrapeResponse.status);
-
-      if (!scrapeResponse.ok) {
-        throw new Error(`HTTP ${scrapeResponse.status}: ${scrapeResponse.statusText}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      const contentType = scrapeResponse.headers.get('content-type') || '';
-      
-      if (!contentType.includes('text/html')) {
-        throw new Error(`Unsupported content type: ${contentType}. Only HTML content is supported.`);
-      }
+      const html = await response.text()
 
-      const htmlContent = await scrapeResponse.text();
-      
-      if (!htmlContent || htmlContent.length === 0) {
-        throw new Error('No content received from the website');
-      }
-
-      console.log('✅ Scraping successful, content length:', htmlContent.length);
-
-      // Save scraping result for non-tool requests
-      if (!isToolRequest && apiKeyData) {
-        try {
-          await supabase
-            .from('scraping_results')
-            .insert([
-              {
-                api_key_id: apiKeyData.id,
-                url: sanitizedUrl,
-                html_content: htmlContent.substring(0, 15000), // Limit size
-                status: 'success',
-                content_length: htmlContent.length
-              }
-            ])
-        } catch (insertError) {
-          console.error('Failed to save result:', insertError);
-          // Continue even if save fails
-        }
-      }
-
-      // Return success response
+      // Return successful response
       return res.status(200).json({
         status: 'success',
-        url: sanitizedUrl,
+        url: targetUrl,
         code: 200,
         tool: 'HASAN',
-        html: htmlContent,
-        content: htmlContent,
+        html: html,
+        content: html,
         timestamp: new Date().toISOString(),
-        source: isToolRequest ? 'tool_auto_key' : 'user_api_key',
-        content_length: htmlContent.length,
-        message: 'Website scraped successfully'
-      });
+        content_length: html.length
+      })
 
-    } catch (scrapeError) {
-      console.error('❌ Scraping failed:', scrapeError.message);
+    } catch (fetchError) {
+      clearTimeout(timeout)
       
-      let errorMessage = 'Failed to scrape website: ';
-      
-      if (scrapeError.name === 'AbortError') {
-        errorMessage += 'Request timeout (25 seconds)';
-      } else if (scrapeError.message.includes('fetch failed')) {
-        errorMessage += 'Network error - website may be unreachable';
-      } else if (scrapeError.message.includes('HTTP')) {
-        errorMessage += scrapeError.message;
-      } else {
-        errorMessage += scrapeError.message;
+      if (fetchError.name === 'AbortError') {
+        throw new Error('Request timeout - website took too long to respond')
       }
-
-      // Log failed request for non-tool requests
-      if (!isToolRequest && apiKeyData) {
-        try {
-          const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
-          await supabase
-            .from('api_requests')
-            .insert([
-              {
-                api_key_id: apiKeyData.id,
-                endpoint: '/api/hasan/scrape',
-                method: 'POST',
-                status_code: 500,
-                ip_address: clientIp,
-                user_agent: req.headers['user-agent'] || 'unknown',
-                error_message: errorMessage
-              }
-            ])
-        } catch (logError) {
-          console.error('Failed to log error:', logError);
-        }
-      }
-
-      return res.status(500).json({
-        status: 'error',
-        error: errorMessage,
-        url: sanitizedUrl,
-        code: 500,
-        tool: 'HASAN',
-        details: 'Check if the website is accessible and allows scraping'
-      });
+      throw fetchError
     }
 
   } catch (error) {
-    console.error('💥 Unexpected API error:', error);
+    console.error('API Error:', error.message)
     
     return res.status(500).json({
       status: 'error',
-      error: 'Internal server error',
+      error: error.message,
       code: 500,
-      tool: 'HASAN',
-      details: 'Please try again later'
-    });
+      tool: 'HASAN'
+    })
   }
 }
