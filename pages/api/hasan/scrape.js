@@ -1,7 +1,7 @@
 import { supabase } from '../../../lib/supabase'
 
 // Special auto-generated key for tool
-const TOOL_API_KEY = 'sk_tool_auto_generate_hasan_system_2025'
+const TOOL_API_KEY = 'sk_tool_auto_generate_hasan_system_2024'
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -25,9 +25,10 @@ export default async function handler(req, res) {
     const apiKey = req.headers['x-api-key'] || req.headers['X-API-Key']
     const { url } = req.body
 
-    console.log('API Request Received:', { 
+    console.log('🔧 API Request Received:', { 
       hasApiKey: !!apiKey, 
-      url: url
+      url: url,
+      method: req.method 
     })
 
     // Special auto-generated key for tool
@@ -68,7 +69,7 @@ export default async function handler(req, res) {
       
       const urlObj = new URL(urlToScrape);
       sanitizedUrl = urlObj.href;
-      console.log('Sanitized URL:', sanitizedUrl);
+      console.log('🔗 Sanitized URL:', sanitizedUrl);
     } catch (error) {
       return res.status(400).json({
         status: 'error',
@@ -89,7 +90,7 @@ export default async function handler(req, res) {
           .single()
 
         if (apiKeyError || !keyData) {
-          console.log('Invalid API key:', apiKey);
+          console.log('❌ Invalid API key:', apiKey);
           return res.status(401).json({
             status: 'error',
             error: 'Invalid or inactive API key'
@@ -97,7 +98,7 @@ export default async function handler(req, res) {
         }
 
         apiKeyData = keyData;
-        console.log('Valid API key:', keyData.name);
+        console.log('✅ Valid API key:', keyData.name);
 
         // Update API key usage
         await supabase
@@ -117,14 +118,14 @@ export default async function handler(req, res) {
       }
     }
 
-    console.log('Starting scrape for:', sanitizedUrl);
+    console.log('🌐 Starting scrape for:', sanitizedUrl);
 
     // Scrape the website with enhanced error handling
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => {
         controller.abort();
-        console.log('Request timeout');
+        console.log('⏰ Request timeout');
       }, 25000); // 25 second timeout
 
       const fetchOptions = {
@@ -136,7 +137,11 @@ export default async function handler(req, res) {
           'Accept-Encoding': 'gzip, deflate, br',
           'Cache-Control': 'no-cache',
           'Connection': 'keep-alive',
-          'Upgrade-Insecure-Requests': '1'
+          'Upgrade-Insecure-Requests': '1',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-User': '?1'
         },
         redirect: 'follow',
         timeout: 25000
@@ -145,7 +150,7 @@ export default async function handler(req, res) {
       const scrapeResponse = await fetch(sanitizedUrl, fetchOptions);
       clearTimeout(timeoutId);
 
-      console.log('Response Status:', scrapeResponse.status);
+      console.log('📄 Response Status:', scrapeResponse.status);
 
       if (!scrapeResponse.ok) {
         throw new Error(`HTTP ${scrapeResponse.status}: ${scrapeResponse.statusText}`);
@@ -163,7 +168,7 @@ export default async function handler(req, res) {
         throw new Error('No content received from the website');
       }
 
-      console.log('Scraping successful, content length:', htmlContent.length);
+      console.log('✅ Scraping successful, content length:', htmlContent.length);
 
       // Save scraping result for non-tool requests
       if (!isToolRequest && apiKeyData) {
@@ -185,7 +190,7 @@ export default async function handler(req, res) {
         }
       }
 
-      // Return success response with proper HTML
+      // Return success response
       return res.status(200).json({
         status: 'success',
         url: sanitizedUrl,
@@ -200,7 +205,7 @@ export default async function handler(req, res) {
       });
 
     } catch (scrapeError) {
-      console.error('Scraping failed:', scrapeError.message);
+      console.error('❌ Scraping failed:', scrapeError.message);
       
       let errorMessage = 'Failed to scrape website: ';
       
@@ -247,7 +252,7 @@ export default async function handler(req, res) {
     }
 
   } catch (error) {
-    console.error('Unexpected API error:', error);
+    console.error('💥 Unexpected API error:', error);
     
     return res.status(500).json({
       status: 'error',
