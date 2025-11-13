@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Head from 'next/head'
 import Header from '../components/Header'
+import Footer from '../components/Footer'
 import Toast from '../components/Toast'
 import { generateApiKey } from '../utils/apiHelpers'
 import { supabase } from '../lib/supabase'
@@ -28,26 +29,30 @@ export default function Generate() {
     try {
       const newApiKey = generateApiKey()
       
-      // Save to Supabase
+      // Save to Supabase - FIXED with error handling
       const { data, error } = await supabase
         .from('api_keys')
         .insert([
           {
             key: newApiKey,
             name: apiName.trim(),
-            is_active: true
+            is_active: true,
+            total_requests: 0
           }
         ])
         .select()
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw new Error('Failed to save API key to database')
+      }
 
       setGeneratedKey(newApiKey)
       setApiName('')
       showToast('API key generated successfully!')
     } catch (error) {
       console.error('Error generating API key:', error)
-      showToast('Failed to generate API key', 'error')
+      showToast(error.message || 'Failed to generate API key', 'error')
     } finally {
       setLoading(false)
     }
@@ -61,7 +66,8 @@ export default function Generate() {
   return (
     <>
       <Head>
-        <title>Generate API Key - WebScraperAPI</title>
+        <title>Generate API Key - WebScraperAPI | Get Your Free API Key</title>
+        <meta name="description" content="Generate your free WebScraperAPI key for unlimited web scraping requests. Start extracting data from any website today." />
       </Head>
 
       <Header />
@@ -69,11 +75,11 @@ export default function Generate() {
       <main className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Generate API Key</h1>
-            <p className="text-xl text-gray-600">Create a new API key to start using our web scraping service</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Generate API Key</h1>
+            <p className="text-lg md:text-xl text-gray-600">Create a new API key to start using our web scraping service</p>
           </div>
 
-          <div className="bg-white border border-gray-200 p-6">
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
             {!generatedKey ? (
               <form onSubmit={handleGenerate} className="space-y-6">
                 <div>
@@ -85,7 +91,8 @@ export default function Generate() {
                     value={apiName}
                     onChange={(e) => setApiName(e.target.value)}
                     placeholder="e.g., My Production Key"
-                    className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-primary-500"
+                    className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
+                    required
                   />
                   <p className="text-sm text-gray-500 mt-2">
                     Give your API key a descriptive name to identify its purpose
@@ -95,7 +102,7 @@ export default function Generate() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-primary-500 text-white py-3 hover:bg-primary-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-primary-500 text-white py-3 hover:bg-primary-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center">
@@ -120,13 +127,13 @@ export default function Generate() {
                   </p>
                 </div>
 
-                <div className="bg-gray-900 p-4">
-                  <code className="text-green-400 font-mono break-all">{generatedKey}</code>
+                <div className="bg-gray-900 p-4 rounded-lg">
+                  <code className="text-green-400 font-mono text-sm break-all">{generatedKey}</code>
                 </div>
 
                 <button
                   onClick={handleCopy}
-                  className="w-full bg-primary-500 text-white py-3 hover:bg-primary-600 font-medium"
+                  className="w-full bg-primary-500 text-white py-3 hover:bg-primary-600 font-medium transition-colors"
                 >
                   <i className="ri-clipboard-line mr-2"></i>
                   Copy API Key
@@ -134,7 +141,7 @@ export default function Generate() {
 
                 <button
                   onClick={() => setGeneratedKey('')}
-                  className="w-full border border-gray-300 text-gray-700 py-3 hover:border-primary-500 font-medium"
+                  className="w-full border border-gray-300 text-gray-700 py-3 hover:border-primary-500 font-medium transition-colors"
                 >
                   Generate Another Key
                 </button>
@@ -142,7 +149,7 @@ export default function Generate() {
             )}
           </div>
 
-          <div className="bg-yellow-50 border border-yellow-200 p-6 mt-6">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mt-6">
             <div className="flex items-start space-x-3">
               <i className="ri-error-warning-line text-yellow-600 text-xl mt-1"></i>
               <div>
@@ -152,12 +159,15 @@ export default function Generate() {
                   <li>• Each API key should be used for a specific purpose or application</li>
                   <li>• Regularly rotate your API keys for enhanced security</li>
                   <li>• Monitor your API usage in the dashboard</li>
+                  <li>• <strong>Tool Usage:</strong> Use our web scraping tool without API key for quick testing</li>
                 </ul>
               </div>
             </div>
           </div>
         </div>
       </main>
+
+      <Footer />
 
       {toast && (
         <Toast
@@ -168,4 +178,4 @@ export default function Generate() {
       )}
     </>
   )
-    }
+                               }
