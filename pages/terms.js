@@ -58,4 +58,18 @@ export default function Terms() {
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-bold text-gray
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">4. Service Modifications</h2>
+                <p className="text-gray-600">
+                  WebScraperAPI reserves the right to modify or discontinue, temporarily or permanently, 
+                  the service with or without notice.
+                </p>
+              </section>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <Footer />
+    </>
+  )
+}
