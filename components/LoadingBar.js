@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 
 export default function LoadingBar() {
@@ -38,9 +38,8 @@ export default function LoadingBar() {
       <div 
         className="h-1 bg-gradient-to-r from-primary-500 to-blue-600 transition-all duration-300 ease-out"
         style={{ width: `${progress}%` }}
-      >
-        <div className="h-full w-20 bg-white opacity-20 animate-pulse float-right"></div>
-      </div>
+      ></div>
+      <div className="h-1 bg-gray-200 w-full -mt-1"></div>
     </div>
   )
-          }
+}
