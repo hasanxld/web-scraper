@@ -12,10 +12,8 @@ export default function Home() {
   const [websiteUrl, setWebsiteUrl] = useState('')
 
   useEffect(() => {
-    // Safe URL detection
-    if (typeof window !== 'undefined') {
-      setWebsiteUrl(window.location.origin)
-    }
+    const currentUrl = window.location.origin
+    setWebsiteUrl(currentUrl)
   }, [])
 
   const showToast = (message, type = 'success') => {
@@ -47,14 +45,13 @@ export default function Home() {
 
       if (response.ok && data.status === 'success') {
         setResult(data.html || data.content)
-        showToast('Successfully scraped website!')
+        showToast('Website scraped successfully!')
       } else {
-        const errorMsg = data.error || 'Failed to scrape website'
-        showToast(errorMsg, 'error')
+        showToast(data.error || 'Failed to scrape website. Please check the URL.', 'error')
       }
     } catch (error) {
-      console.error('Error:', error)
-      showToast('Network error occurred while scraping', 'error')
+      console.error('Scraping error:', error)
+      showToast('Network error. Please try again.', 'error')
     } finally {
       setLoading(false)
     }
@@ -83,54 +80,23 @@ export default function Home() {
     setResult('')
   }
 
-  // Safe syntax highlighting function
   const highlightCode = (html) => {
-    if (!html || typeof html !== 'string') return ''
+    if (!html) return ''
     
-    try {
-      let formattedHtml = html
-        .replace(/</g, '\n<')
-        .replace(/>/g, '>\n')
-        .replace(/\n\n/g, '\n')
-        .trim()
-
-      return formattedHtml
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"(.*?)"/g, '<span style="color: #fbbf24;">"$1"</span>')
-        .replace(/&lt;!DOCTYPE(.*?)&gt;/g, '<span style="color: #c084fc;">&lt;!DOCTYPE$1&gt;</span>')
-        .replace(/&lt;(\/?)(html|head|body|div|span|p|a|img|script|style|link|meta|title|h1|h2|h3|h4|h5|h6|ul|ol|li|table|tr|td|th|form|input|button|select|option|br|hr|nav|header|footer|section|article|aside|main)(.*?)&gt;/g, '<span style="color: #60a5fa;">&lt;$1$2$3&gt;</span>')
-        .replace(/&lt;(\/?)([a-zA-Z][a-zA-Z0-9]*)(.*?)&gt;/g, '<span style="color: #93c5fd;">&lt;$1$2$3&gt;</span>')
-        .replace(/class=(".*?")/g, 'class=<span style="color: #34d399;">$1</span>')
-        .replace(/id=(".*?")/g, 'id=<span style="color: #34d399;">$1</span>')
-        .replace(/href=(".*?")/g, 'href=<span style="color: #34d399;">$1</span>')
-        .replace(/src=(".*?")/g, 'src=<span style="color: #34d399;">$1</span>')
-        .replace(/&lt;!--(.*?)--&gt;/g, '<span style="color: #9ca3af;">&lt;!--$1--&gt;</span>')
-        .replace(/\n/g, '<br/>')
-    } catch (error) {
-      console.error('Highlight error:', error)
-      return html
-    }
+    return html
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"(.*?)"/g, '<span class="text-yellow-300">"$1"</span>')
+      .replace(/&lt;!DOCTYPE(.*?)&gt;/g, '<span class="text-purple-400">&lt;!DOCTYPE$1&gt;</span>')
+      .replace(/&lt;(\/?)(html|head|body|div|span|p|a|img|script|style|link|meta|title|h1|h2|h3|h4|h5|h6|ul|ol|li|table|tr|td|th|form|input|button|select|option|br|hr|nav|header|footer|section|article|aside|main)(.*?)&gt;/g, '<span class="text-blue-400">&lt;$1$2$3&gt;</span>')
+      .replace(/&lt;(\/?)([a-zA-Z][a-zA-Z0-9]*)(.*?)&gt;/g, '<span class="text-blue-300">&lt;$1$2$3&gt;</span>')
+      .replace(/class=(".*?")/g, 'class=<span class="text-green-400">$1</span>')
+      .replace(/id=(".*?")/g, 'id=<span class="text-green-400">$1</span>')
+      .replace(/href=(".*?")/g, 'href=<span class="text-green-400">$1</span>')
+      .replace(/src=(".*?")/g, 'src=<span class="text-green-400">$1</span>')
+      .replace(/&lt;!--(.*?)--&gt;/g, '<span class="text-gray-500">&lt;!--$1--&gt;</span>')
   }
-
-  const features = [
-    {
-      icon: 'ri-zap-line',
-      title: 'Lightning Fast',
-      description: 'Get results in seconds with our optimized scraping engine and advanced caching system.'
-    },
-    {
-      icon: 'ri-shield-keyhole-line',
-      title: 'No API Key Required',
-      description: 'Use our tool instantly without any registration or API key. Fast and hassle-free.'
-    },
-    {
-      icon: 'ri-global-line',
-      title: 'No CORS Issues',
-      description: 'Built with CORS support for seamless integration with any web application or website.'
-    }
-  ]
 
   return (
     <>
@@ -145,7 +111,6 @@ export default function Home() {
       <Header />
 
       <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        {/* Hero Section */}
         <section className="py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
@@ -159,7 +124,6 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Integrated Tool Section */}
             <div className="bg-white border border-gray-200 rounded-lg shadow-xl p-6 mb-12">
               <div className="text-center mb-8">
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
@@ -173,28 +137,28 @@ export default function Home() {
               <form onSubmit={handleSubmit} className="space-y-4 mb-8">
                 <div className="flex flex-col sm:flex-row gap-4">
                   <input
-                    type="url"
+                    type="text"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
-                    placeholder="https://example.com or example.com"
+                    placeholder="example.com or https://example.com"
                     className="flex-1 px-4 py-3 border border-gray-300 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
                     required
                   />
                   <button
                     type="submit"
                     disabled={loading}
-                    className="bg-primary-500 text-white px-8 py-3 hover:bg-primary-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px] transition-colors"
+                    className="bg-primary-500 text-white px-8 py-3 hover:bg-primary-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px] transition-colors flex items-center justify-center"
                   >
                     {loading ? (
-                      <span className="flex items-center justify-center">
+                      <>
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                         Scraping...
-                      </span>
+                      </>
                     ) : (
-                      <span className="flex items-center justify-center">
-                        <i className="ri-download-line mr-2"></i>
+                      <>
+                        <span className="ri-download-line mr-2"></span>
                         Scrape Website
-                      </span>
+                      </>
                     )}
                   </button>
                 </div>
@@ -202,6 +166,15 @@ export default function Home() {
                   Try: example.com, google.com, or any website URL
                 </p>
               </form>
+
+              {loading && (
+                <div className="text-center py-8">
+                  <div className="inline-flex items-center space-x-2 bg-blue-50 px-4 py-2 rounded-lg">
+                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-blue-600 font-medium">Scraping website content...</span>
+                  </div>
+                </div>
+              )}
 
               {result && (
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
@@ -213,31 +186,31 @@ export default function Home() {
                     <div className="flex flex-wrap gap-2">
                       <button
                         onClick={handleCopy}
-                        className="flex items-center space-x-2 px-3 py-2 bg-gray-700 text-white hover:bg-gray-600 text-sm transition-colors rounded"
+                        className="flex items-center space-x-2 px-3 py-2 bg-gray-700 text-white hover:bg-gray-600 text-sm transition-colors"
                       >
-                        <i className="ri-clipboard-line"></i>
+                        <span className="ri-clipboard-line"></span>
                         <span>Copy</span>
                       </button>
                       <button
                         onClick={handleDownload}
-                        className="flex items-center space-x-2 px-3 py-2 bg-primary-500 text-white hover:bg-primary-600 text-sm transition-colors rounded"
+                        className="flex items-center space-x-2 px-3 py-2 bg-primary-500 text-white hover:bg-primary-600 text-sm transition-colors"
                       >
-                        <i className="ri-download-line"></i>
+                        <span className="ri-download-line"></span>
                         <span>Download</span>
                       </button>
                       <button
                         onClick={handleReset}
-                        className="flex items-center space-x-2 px-3 py-2 bg-gray-600 text-white hover:bg-gray-500 text-sm transition-colors rounded"
+                        className="flex items-center space-x-2 px-3 py-2 bg-gray-600 text-white hover:bg-gray-500 text-sm transition-colors"
                       >
-                        <i className="ri-refresh-line"></i>
+                        <span className="ri-refresh-line"></span>
                         <span>Reset</span>
                       </button>
                     </div>
                   </div>
                   <div className="bg-gray-900 p-4 overflow-auto max-h-96">
-                    <pre className="text-sm font-mono whitespace-pre-wrap break-words">
+                    <pre className="text-sm">
                       <code 
-                        className="block text-green-400"
+                        className="language-html block"
                         dangerouslySetInnerHTML={{ 
                           __html: highlightCode(result) 
                         }}
@@ -250,7 +223,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Features Section */}
         <section className="py-12 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
@@ -262,7 +234,7 @@ export default function Home() {
               {features.map((feature, index) => (
                 <div key={index} className="text-center p-6 border border-gray-200 hover:border-primary-500 transition-colors rounded-lg hover:shadow-lg">
                   <div className="w-16 h-16 bg-primary-500 mx-auto mb-4 flex items-center justify-center rounded-lg">
-                    <i className={`${feature.icon} text-white text-2xl`}></i>
+                    <span className={`${feature.icon} text-white text-2xl`}></span>
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">{feature.title}</h3>
                   <p className="text-gray-600">{feature.description}</p>
@@ -272,7 +244,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* CTA Section */}
         <section className="py-12 bg-primary-500">
           <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Need More Power?</h2>
@@ -303,3 +274,21 @@ export default function Home() {
     </>
   )
 }
+
+const features = [
+  {
+    icon: 'ri-zap-line',
+    title: 'Lightning Fast',
+    description: 'Get results in seconds with our optimized scraping engine and advanced caching system.'
+  },
+  {
+    icon: 'ri-shield-keyhole-line',
+    title: 'No API Key Required',
+    description: 'Use our tool instantly without any registration or API key. Fast and hassle-free.'
+  },
+  {
+    icon: 'ri-global-line',
+    title: 'No CORS Issues',
+    description: 'Built with CORS support for seamless integration with any web application or website.'
+  }
+]
