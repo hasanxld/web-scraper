@@ -24,14 +24,13 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(45deg, #0ea5e9, #3b82f6);
-  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(45deg, #0284c7, #1d4ed8);
 }
 
-/* Premium Animations */
+/* Premium Top Loader Animations */
 @keyframes shimmer {
   0% {
     transform: translateX(-100%);
@@ -41,7 +40,7 @@ body {
   }
 }
 
-@keyframes pulse-slow {
+@keyframes pulse-glow {
   0%, 100% {
     opacity: 1;
   }
@@ -50,14 +49,23 @@ body {
   }
 }
 
+@keyframes float-dot {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(-10px) scale(0.95);
+    transform: translateY(-10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
@@ -82,8 +90,12 @@ body {
   animation: shimmer 2s infinite;
 }
 
-.animate-pulse-slow {
-  animation: pulse-slow 3s infinite;
+.animate-pulse-glow {
+  animation: pulse-glow 1.5s infinite;
+}
+
+.animate-float-dot {
+  animation: float-dot 1s infinite;
 }
 
 .animate-fade-in {
@@ -98,25 +110,11 @@ body {
   animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
-/* Code highlighting */
-.code-html {
-  color: #f8f8f2;
-}
-
-.code-tag {
-  color: #ff79c6;
-}
-
-.code-attr {
-  color: #50fa7b;
-}
-
-.code-string {
-  color: #f1fa8c;
-}
-
-.code-comment {
-  color: #6272a4;
+/* Code highlighting with proper line breaks */
+.language-html {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.5;
 }
 
 /* Loading animation */
@@ -165,4 +163,23 @@ body {
 
 .premium-btn:hover::before {
   left: 100%;
+}
+
+/* Scrollbar for code blocks */
+.code-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.code-container::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.code-container::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 3px;
+}
+
+.code-container::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
 }
