@@ -1,7 +1,10 @@
 const Sitemap = () => {}
 
-export async function getServerSideProps({ res }) {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://your-domain.vercel.app'
+export async function getServerSideProps({ req, res }) {
+  // Auto-detect website URL from request
+  const protocol = req.headers['x-forwarded-proto'] || 'http'
+  const host = req.headers.host
+  const baseUrl = `${protocol}://${host}`
   
   const staticPages = [
     '',
@@ -20,8 +23,8 @@ export async function getServerSideProps({ res }) {
     <url>
       <loc>${baseUrl}${page}</loc>
       <lastmod>${new Date().toISOString()}</lastmod>
-      <changefreq>monthly</changefreq>
-      <priority>${page === '' ? '1.0' : '0.8'}</priority>
+      <changefreq>${page === '' ? 'daily' : 'weekly'}</changefreq>
+      <priority>${page === '' ? '1.0' : page === '/docs' ? '0.9' : '0.8'}</priority>
     </url>
   `).join('')}
 </urlset>`
