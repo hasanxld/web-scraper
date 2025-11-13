@@ -35,9 +35,9 @@ export default function Home() {
     setResult('')
 
     try {
-      console.log('🔄 Starting scrape for:', url)
+      console.log('Starting scrape for:', url)
       
-      // Use special auto-generated API key for tool - FIXED
+      // Use special auto-generated API key for tool
       const response = await fetch('/api/hasan/scrape', {
         method: 'POST',
         headers: {
@@ -48,19 +48,19 @@ export default function Home() {
       })
 
       const data = await response.json()
-      console.log('📦 API Response:', data)
+      console.log('API Response:', data)
 
       if (response.ok && data.status === 'success') {
         setResult(data.html || data.content)
-        showToast('✅ Successfully scraped website!')
+        showToast('Successfully scraped website!')
       } else {
         const errorMsg = data.error || data.details || 'Failed to scrape website'
-        console.error('❌ API Error:', errorMsg)
-        showToast(`❌ ${errorMsg}`, 'error')
+        console.error('API Error:', errorMsg)
+        showToast(`${errorMsg}`, 'error')
       }
     } catch (error) {
-      console.error('💥 Network error:', error)
-      showToast('🔌 Network error occurred while scraping', 'error')
+      console.error('Network error:', error)
+      showToast('Network error occurred while scraping', 'error')
     } finally {
       setLoading(false)
     }
@@ -68,7 +68,7 @@ export default function Home() {
 
   const handleCopy = () => {
     navigator.clipboard.writeText(result)
-    showToast('📋 Copied to clipboard!')
+    showToast('Copied to clipboard!')
   }
 
   const handleDownload = () => {
@@ -81,7 +81,7 @@ export default function Home() {
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-    showToast('💾 Download started!')
+    showToast('Download started!')
   }
 
   const handleReset = () => {
@@ -89,11 +89,18 @@ export default function Home() {
     setResult('')
   }
 
-  // Enhanced syntax highlighting function
+  // Enhanced syntax highlighting function with proper line breaks
   const highlightCode = (html) => {
     if (!html) return ''
     
-    return html
+    // Add line breaks for proper formatting
+    let formattedHtml = html
+      .replace(/</g, '\n<')
+      .replace(/>/g, '>\n')
+      .replace(/\n\n/g, '\n')
+      .trim()
+
+    return formattedHtml
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
@@ -106,6 +113,7 @@ export default function Home() {
       .replace(/href=(".*?")/g, 'href=<span class="text-green-400">$1</span>')
       .replace(/src=(".*?")/g, 'src=<span class="text-green-400">$1</span>')
       .replace(/&lt;!--(.*?)--&gt;/g, '<span class="text-gray-500">&lt;!--$1--&gt;</span>')
+      .replace(/\n/g, '<br/>')
   }
 
   return (
@@ -163,7 +171,6 @@ export default function Home() {
                   >
                     {loading ? (
                       <span className="flex items-center justify-center">
-                        {/* Scraping Loader */}
                         <div className="relative">
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                           <div className="absolute inset-0 border-2 border-white border-r-transparent border-b-transparent rounded-full animate-ping"></div>
@@ -190,7 +197,7 @@ export default function Home() {
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
                   <div className="bg-gray-900 px-4 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
-                      <h3 className="text-white font-medium">✅ Scraped Content</h3>
+                      <h3 className="text-white font-medium">Scraped Content</h3>
                       <p className="text-gray-400 text-sm">Length: {result.length} characters</p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -218,7 +225,7 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="bg-gray-900 p-4 overflow-auto max-h-96">
-                    <pre className="text-sm">
+                    <pre className="text-sm font-mono text-green-400 whitespace-pre-wrap break-words">
                       <code 
                         className="language-html block"
                         dangerouslySetInnerHTML={{ 
